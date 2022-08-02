@@ -33,9 +33,7 @@ class STSElement(object):
             return cls(root_name, cElementTree.fromstring(data))
         except _ETREE_EXCEPTIONS as error:
             raise InvalidXMLError(
-                '"{}" XML is not parsable. Message: {}'.format(
-                    root_name, error.message
-                )
+                f'"{root_name}" XML is not parsable. Message: {error.message}'
             )
 
     def findall(self, name):
@@ -44,14 +42,14 @@ class STSElement(object):
         """
         return [
             STSElement(self.root_name, elem)
-            for elem in self.element.findall('sts:{}'.format(name), _STS_NS)
+            for elem in self.element.findall(f'sts:{name}', _STS_NS)
         ]
 
     def find(self, name):
         """Similar to ElementTree.Element.find()
 
         """
-        elt = self.element.find('sts:{}'.format(name), _STS_NS)
+        elt = self.element.find(f'sts:{name}', _STS_NS)
         return STSElement(self.root_name, elt) if elt is not None else None
 
     def get_child_text(self, name, strict=True):
@@ -60,16 +58,14 @@ class STSElement(object):
         None.
 
         """
-        if strict:
-            try:
-                return self.element.find('sts:{}'.format(name), _STS_NS).text
-            except _ETREE_EXCEPTIONS as error:
-                raise InvalidXMLError(
-                    ('Invalid XML provided for "{}" - erroring tag <{}>. '
-                     'Message: {}').format(self.root_name, name, error.message)
-                )
-        else:
-            return self.element.findtext('sts:{}'.format(name), None, _STS_NS)
+        if not strict:
+            return self.element.findtext(f'sts:{name}', None, _STS_NS)
+        try:
+            return self.element.find(f'sts:{name}', _STS_NS).text
+        except _ETREE_EXCEPTIONS as error:
+            raise InvalidXMLError(
+                f'Invalid XML provided for "{self.root_name}" - erroring tag <{name}>. Message: {error.message}'
+            )
 
     def text(self):
         """Fetch the current node's text

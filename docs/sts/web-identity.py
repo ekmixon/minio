@@ -50,15 +50,13 @@ def make_authorization_url():
               "redirect_uri": callback_uri,
               "scope": "openid"}
 
-    url = authorize_url + "?" + urllib.parse.urlencode(params)
-    return url
+    return f"{authorize_url}?{urllib.parse.urlencode(params)}"
 
 
 @app.route('/oauth2/callback')
 def callback():
-    error = request.args.get('error', '')
-    if error:
-        return "Error: " + error
+    if error := request.args.get('error', ''):
+        return f"Error: {error}"
 
     authorization_code = request.args.get('code')
 
@@ -68,7 +66,7 @@ def callback():
         token_url, data=data, verify=False,
         allow_redirects=False, auth=(client_id, client_secret))
 
-    print('body: ' + id_token_response.text)
+    print(f'body: {id_token_response.text}')
 
     # we can now use the id_token as much as we want to access protected resources.
     tokens = json.loads(id_token_response.text)

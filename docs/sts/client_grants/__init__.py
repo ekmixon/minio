@@ -50,15 +50,14 @@ class ClientGrantsCredentialProvider(CredentialProvider):
         """
         Search for credentials with client_grants
         """
-        if self.cid is not None:
-            fetcher = self._create_credentials_fetcher()
-            return RefreshableCredentials.create_from_metadata(
-                metadata=fetcher(),
-                refresh_using=fetcher,
-                method=self.METHOD,
-            )
-        else:
+        if self.cid is None:
             return None
+        fetcher = self._create_credentials_fetcher()
+        return RefreshableCredentials.create_from_metadata(
+            metadata=fetcher(),
+            refresh_using=fetcher,
+            method=self.METHOD,
+        )
 
     def _create_credentials_fetcher(self):
         method = self.METHOD
@@ -69,7 +68,9 @@ class ClientGrantsCredentialProvider(CredentialProvider):
             headers = {}
             headers['content-type'] = 'application/x-www-form-urlencoded'
             headers['authorization'] = urllib3.make_headers(
-                basic_auth='%s:%s' % (self.cid, self.csec))['authorization']
+                basic_auth=f'{self.cid}:{self.csec}'
+            )['authorization']
+
 
             response = self._http.urlopen('POST', self.idp_ep,
                                           body="grant_type=client_credentials",
@@ -94,12 +95,12 @@ class ClientGrantsCredentialProvider(CredentialProvider):
             query_components = []
             for key in query:
                 if query[key] is not None:
-                    query_components.append("%s=%s" % (key, query[key]))
+                    query_components.append(f"{key}={query[key]}")
 
             query_string = '&'.join(query_components)
             sts_ep_url = self.sts_ep
             if query_string:
-                sts_ep_url = self.sts_ep + '?' + query_string
+                sts_ep_url = f'{self.sts_ep}?{query_string}'
 
             response = self._http.urlopen(
                 'POST', sts_ep_url, preload_content=True)
